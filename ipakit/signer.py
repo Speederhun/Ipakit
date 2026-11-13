@@ -19,6 +19,11 @@ def find_zsign() -> str:
         if local.exists():
             exe = str(local)
     if not exe:
+        from .paths import data_dir
+        local = data_dir() / "bin" / "zsign.exe"
+        if local.exists():
+            exe = str(local)
+    if not exe:
         raise SignerError(
             "zsign not found. Put zsign.exe on PATH or in ipakit/bin/."
         )

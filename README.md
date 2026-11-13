@@ -40,7 +40,13 @@ exact arguments; the first run may ask for your Apple ID and 2FA code in a
 console, and the tool must keep its login so later runs are unattended.
 This path has not been tested against a real Apple ID yet.
 
-## Setup
+## Easy install (Windows)
+
+Download the repo, double-click **install.bat**. It installs Python, the Apple
+USB driver (iTunes), Ipakit and zsign if missing, and puts an **Ipakit** icon
+on the desktop.
+
+## Manual setup
 
 ```
 pip install -e .
