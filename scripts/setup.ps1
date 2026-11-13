@@ -26,12 +26,23 @@ if (-not $py) {
 }
 Write-Host "Using: $py"
 
-# 2) Apple USB driver (comes with iTunes)
+# 2) Apple USB driver (Apple Devices app or iTunes)
 Step "Apple Mobile Device driver"
-if (-not (Get-Service "Apple Mobile Device Service" -ErrorAction SilentlyContinue)) {
-    Write-Host "Installing iTunes (for the iPhone USB driver)..."
-    winget install -e --id Apple.iTunes --silent --accept-package-agreements --accept-source-agreements
-} else { Write-Host "Already installed." }
+function Has-Driver { [bool](Get-Service "Apple Mobile Device Service" -ErrorAction SilentlyContinue) }
+if (Has-Driver) {
+    Write-Host "Already installed."
+} else {
+    Write-Host "Installing Apple Devices (Microsoft Store)..."
+    winget install -e --id 9NP83LWLZNRP --source msstore --silent --accept-package-agreements --accept-source-agreements
+    if (-not (Has-Driver)) {
+        Write-Host "Trying iTunes instead..."
+        winget install -e --id Apple.iTunes --silent --accept-package-agreements --accept-source-agreements
+    }
+    if (-not (Has-Driver)) {
+        Write-Host "Could not install the Apple driver automatically." -ForegroundColor Yellow
+        Write-Host "Install 'Apple Devices' from the Microsoft Store by hand, then run Ipakit." -ForegroundColor Yellow
+    }
+}
 
 # 3) Ipakit in its own virtual environment
 Step "Ipakit"
