@@ -30,6 +30,7 @@ class App(tk.Tk):
         ttk.Button(row, text="Refresh devices", command=self.refresh_devices).pack(side="left")
         ttk.Button(row, text="Install IPA...", command=self.install_ipa).pack(side="left", padx=6)
         ttk.Button(row, text="Renew now", command=self.renew_now).pack(side="left")
+        ttk.Button(row, text="Settings...", command=self.open_settings).pack(side="right")
 
         self.apps = ttk.Treeview(self, columns=("udid", "exp"), show="headings", height=10)
         self.apps.heading("udid", text="Device")
@@ -62,9 +63,61 @@ class App(tk.Tk):
         except Exception as e:
             self._devices = []
             self._set(f"Device error: {e}")
+        if not self._devices and "error" not in self.status.cget("text").lower():
+            self._set("No iPhone found: connect by USB, unlock it, tap Trust, install Apple Devices.")
         self.dev_box["values"] = [f"{d.name} [{d.connection}]" for d in self._devices]
         if self._devices:
             self.dev_box.current(0)
+
+    # --- settings
+    def open_settings(self) -> None:
+        import shlex
+        cur = config.load()
+        win = tk.Toplevel(self)
+        win.title("Signing settings")
+        win.geometry("520x330")
+        mode = tk.StringVar(value=cur.get("mode", "manual"))
+        p12 = tk.StringVar(value=cur.get("p12", ""))
+        pw = tk.StringVar(value=cur.get("p12_password", ""))
+        prof = tk.StringVar(value=cur.get("profile", ""))
+        cmd = tk.StringVar(value=" ".join(cur.get("command", [])))
+
+        def pick(var, types):
+            f = filedialog.askopenfilename(filetypes=types)
+            if f:
+                var.set(f)
+
+        ttk.Radiobutton(win, text="Paid developer account (.p12 + .mobileprovision)",
+                        variable=mode, value="manual").pack(anchor="w", padx=10, pady=(10, 0))
+        for label, var, types, browse in (
+            (".p12", p12, [("p12", "*.p12")], True),
+            ("Password", pw, None, False),
+            (".mobileprovision", prof, [("profile", "*.mobileprovision")], True),
+        ):
+            r = ttk.Frame(win)
+            r.pack(fill="x", padx=30, pady=2)
+            ttk.Label(r, text=label, width=16).pack(side="left")
+            ttk.Entry(r, textvariable=var, show="*" if label == "Password" else "").pack(
+                side="left", fill="x", expand=True)
+            if browse:
+                ttk.Button(r, text="...", width=3,
+                           command=lambda v=var, t=types: pick(v, t)).pack(side="left", padx=2)
+        ttk.Radiobutton(win, text="Free Apple ID via external tool (use {ipa} and {udid})",
+                        variable=mode, value="external").pack(anchor="w", padx=10, pady=(14, 0))
+        ttk.Entry(win, textvariable=cmd).pack(fill="x", padx=30, pady=2)
+
+        def save():
+            if mode.get() == "manual":
+                config.save({"mode": "manual", "p12": p12.get(),
+                             "p12_password": pw.get(), "profile": prof.get()})
+            else:
+                config.save({"mode": "external",
+                             "command": shlex.split(cmd.get(), posix=False),
+                             "validity_days": 7})
+            self._set("Settings saved")
+            win.destroy()
+
+        ttk.Button(win, text="Save", command=save).pack(pady=14)
 
     # --- actions
     def install_ipa(self) -> None:
