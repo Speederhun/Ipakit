@@ -47,8 +47,11 @@ if (Has-Driver) {
 # 3) Ipakit in its own virtual environment
 Step "Ipakit"
 if (-not (Test-Path "$venv\Scripts\python.exe")) { & cmd /c "$py -m venv `"$venv`"" }
-& "$venv\Scripts\python.exe" -m pip install --upgrade pip
-& "$venv\Scripts\python.exe" -m pip install --upgrade "$root"
+# --isolated ignores the user's pip config / PIP_* env vars (a dead extra index
+# such as pypi.ngc.nvidia.com makes every package retry for minutes)
+$pipArgs = @("--isolated", "--index-url", "https://pypi.org/simple", "--retries", "1", "--timeout", "20", "--disable-pip-version-check")
+& "$venv\Scripts\python.exe" -m pip install @pipArgs --upgrade pip
+& "$venv\Scripts\python.exe" -m pip install @pipArgs --upgrade "$root"
 
 # 4) zsign
 Step "zsign"
