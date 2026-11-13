@@ -40,13 +40,16 @@ if (Has-Driver) {
     }
     if (-not (Has-Driver)) {
         Write-Host "Could not install the Apple driver automatically." -ForegroundColor Yellow
-        Write-Host "Install 'Apple Devices' from the Microsoft Store by hand, then run Ipakit." -ForegroundColor Yellow
+        Write-Host "Opening the Microsoft Store page of 'Apple Devices' - click Install there." -ForegroundColor Yellow
+        Start-Process "ms-windows-store://pdp/?productid=9NP83LWLZNRP"
     }
 }
 
 # 3) Ipakit in its own virtual environment
 Step "Ipakit"
 if (-not (Test-Path "$venv\Scripts\python.exe")) { & cmd /c "$py -m venv `"$venv`"" }
+Remove-Item Env:PIP_EXTRA_INDEX_URL, Env:PIP_INDEX_URL, Env:PIP_FIND_LINKS -ErrorAction SilentlyContinue
+$env:PIP_CONFIG_FILE = "NUL"
 # --isolated ignores the user's pip config / PIP_* env vars (a dead extra index
 # such as pypi.ngc.nvidia.com makes every package retry for minutes)
 $pipArgs = @("--isolated", "--index-url", "https://pypi.org/simple", "--retries", "1", "--timeout", "20", "--disable-pip-version-check")
